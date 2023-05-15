@@ -69,7 +69,7 @@ def parse_yf_esg(start=0, stop=len(get_tickers())):
 def parse_mc(tickers):
     '''Функция возвращающая словарь из прибылей и капитализации
     после парсинга значений с сайта Market cap'''
-    errors = {'year': []}
+    errors = {'year': [], 'no_data': [], 'no_cap': [], 'no_profit': []}
     year_mod = {'2023': 2, '2022': 1, '2021': 0}
     multp = {'млн': 10**6, 'млрд': 10**9, 'трлн': 10**12, 'тыс.': 10**3}
     profit = {
@@ -91,18 +91,25 @@ def parse_mc(tickers):
             page = requests.get(url, headers=headers, timeout=10)
 
         soup = BeautifulSoup(page.text, "html.parser")
-        base_table = soup.find_all(
-            'table',
-            class_='table table-striped table-detail-stocks table-responsive table-responsive-sm table-responsive-md table-responsive-lg table-responsive-xl'
-        )[0]
         try:
-            body = base_table.tbody.find_all('tr')
-            head = base_table.thead.tr
-            i = year_mod[head.find_all('th', class_='numeric-sort')[0].text]
+            base_table = soup.find_all(
+                'table',
+                class_='table table-striped table-detail-stocks table-responsive table-responsive-sm table-responsive-md table-responsive-lg table-responsive-xl'
+            )[0]
             resume = True
         except:
-            errors['year'].append((ticker, head.find_all('th', class_='numeric-sort')[0].text))
+            errors['no_data'].append((ticker, 'No data'))
             resume = False
+
+        if resume:
+            try:
+                body = base_table.tbody.find_all('tr')
+                head = base_table.thead.tr
+                i = year_mod[head.find_all('th', class_='numeric-sort')[0].text]
+                resume = True
+            except:
+                errors['year'].append((ticker, head.find_all('th', class_='numeric-sort')[0].text))
+                resume = False
 
         if resume:
             pr = body[3].find_all('td')[i:3+i]
@@ -114,6 +121,7 @@ def parse_mc(tickers):
                     pr_values.append(clear_data)
                 else:
                     pr_values.append(None)
+                    errors['no_profit'].append(ticker)
             profit['Чистая прибыль 2019'].append(pr_values[2])
             profit['Чистая прибыль 2020'].append(pr_values[1])
             profit['Чистая прибыль 2021'].append(pr_values[0])
@@ -127,9 +135,10 @@ def parse_mc(tickers):
                     cap_values.append(clear_data)
                 else:
                     cap_values.append(None)
-            profit['Капитализация 2019'].append(pr_values[2])
-            profit['Капитализация 2020'].append(pr_values[1])
-            profit['Капитализация 2021'].append(pr_values[0])
+                    errors['no_cap'].append(ticker)
+            profit['Капитализация 2019'].append(cap_values[2])
+            profit['Капитализация 2020'].append(cap_values[1])
+            profit['Капитализация 2021'].append(cap_values[0])
         else:
             profit['Чистая прибыль 2019'].append(None)
             profit['Чистая прибыль 2020'].append(None)
