@@ -16,7 +16,7 @@ def get_tickers():
     return df['Symbol']
 
 
-def parse_yf_esg(start=0, stop=-1):
+def parse_yf_esg(start=0, stop=len(get_tickers())):
     '''Функция возвращающая словарь из esg рисков
     после парсинга значений с сайта Yahoo Finance'''
     esg_scores = {
@@ -26,7 +26,7 @@ def parse_yf_esg(start=0, stop=-1):
     }
     tickers = get_tickers()[start:stop]
     for item in tickers:
-        url = 'https://finance.yahoo.com/quote/' + item + '/sustainability?p=' + item
+        url = f'https://finance.yahoo.com/quote/{item}/sustainability?p={item}'
         headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
         try:
             page = requests.get(url, headers=headers, timeout=10)
@@ -64,3 +64,27 @@ def parse_yf_esg(start=0, stop=-1):
             esg_scores['Governance Risk Score'].append(None)
         sleep(0.1)
     return esg_scores
+
+
+def parse_mc(tickers):
+    '''Функция возвращающая словарь из прибылей
+    после парсинга значений с сайта Market cap'''
+    profit = {
+        'Прибыль 2019': [],
+        'Прибыль 2020': [],
+        'Прибыль 2021': []
+    }
+    for ticker in tickers:
+        url = f'https://marketcap.ru/stocks/{ticker}/financial-statements/income-statement'
+        headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
+        try:
+            page = requests.get(url, headers=headers, timeout=10)
+        except:
+            page = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(page.text, "html.parser")
+        a = soup.find_all(
+            'td',
+            class_='title-detail-table'
+        )
+        sleep(1)
+        return a
