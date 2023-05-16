@@ -25,7 +25,7 @@ def parse_yf_esg(start=0, stop=len(get_tickers())):
         'Governance Risk Score': []
     }
     tickers = get_tickers()[start:stop]
-    for item in tickers:
+    for item in tqdm(tickers):
         url = f'https://finance.yahoo.com/quote/{item}/sustainability?p={item}'
         headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
         try:
@@ -55,7 +55,7 @@ def parse_yf_esg(start=0, stop=len(get_tickers())):
                     soup.find_all(
                         'div',
                         class_='D(ib) Fz(23px) smartphone_Fz(22px) Fw(600)'
-                    )[0].text
+                    )[2].text
                 )
             )
         except IndexError:
@@ -117,7 +117,7 @@ def parse_mc(tickers):
             for item in pr:
                 sep_data = item.text.split(sep=' ')
                 if len(sep_data) == 2:
-                    clear_data = float(sep_data[0])*multp[sep_data[1]]
+                    clear_data = int(sep_data[0])*multp[sep_data[1]]
                     pr_values.append(clear_data)
                 else:
                     pr_values.append(None)
@@ -131,7 +131,7 @@ def parse_mc(tickers):
             for item in cap:
                 sep_data = item.text.split(sep=' ')
                 if len(sep_data) == 2:
-                    clear_data = float(sep_data[0])*multp[sep_data[1]]
+                    clear_data = int(sep_data[0])*multp[sep_data[1]]
                     cap_values.append(clear_data)
                 else:
                     cap_values.append(None)
