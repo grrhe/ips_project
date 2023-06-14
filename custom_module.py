@@ -1,12 +1,13 @@
+import os
 from time import sleep
 
-import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from settings import TOTALLY_NOT_A_PARSER
+from settings import (CRAZY_BIG_ASS_CLASS, INHUMANLY_GIGANTIC_CLASS,
+                      TOTALLY_NOT_A_PARSER)
 
 
 def get_tickers():
@@ -30,7 +31,7 @@ def parse_yf_esg(start=0, stop=len(get_tickers())):
         headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
         try:
             page = requests.get(url, headers=headers, timeout=10)
-        except:
+        except Exception:
             page = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(page.text, "html.parser")
         try:
@@ -83,21 +84,22 @@ def parse_mc(tickers):
     }
     for ticker in tqdm(tickers):
         profit['Компания'].append(ticker)
-        url = f'https://marketcap.ru/stocks/{ticker}/financial-statements/income-statement'
+        mc = 'https://marketcap.ru'
+        url = mc + f'/stocks/{ticker}/financial-statements/income-statement'
         headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
         try:
             page = requests.get(url, headers=headers, timeout=10)
-        except:
+        except Exception:
             page = requests.get(url, headers=headers, timeout=10)
 
         soup = BeautifulSoup(page.text, "html.parser")
         try:
             base_table = soup.find_all(
                 'table',
-                class_='table table-striped table-detail-stocks table-responsive table-responsive-sm table-responsive-md table-responsive-lg table-responsive-xl'
+                class_=INHUMANLY_GIGANTIC_CLASS
             )[0]
             resume = True
-        except:
+        except Exception:
             errors['no_data'].append((ticker, 'No data'))
             resume = False
 
@@ -105,10 +107,16 @@ def parse_mc(tickers):
             try:
                 body = base_table.tbody.find_all('tr')
                 head = base_table.thead.tr
-                i = year_mod[head.find_all('th', class_='numeric-sort')[0].text]
+                i = year_mod[
+                    head.find_all('th', class_='numeric-sort')[0].text
+                    ]
                 resume = True
-            except:
-                errors['year'].append((ticker, head.find_all('th', class_='numeric-sort')[0].text))
+            except Exception:
+                errors['year'].append(
+                    (ticker, head.find_all(
+                        'th', class_='numeric-sort'
+                        )[0].text)
+                    )
                 resume = False
 
         if resume:
@@ -148,3 +156,89 @@ def parse_mc(tickers):
             profit['Капитализация 2021'].append(None)
         sleep(0.25)
     return (profit, errors)
+
+
+def fuck():
+    '''Эх, просто убейте меня уже'''
+    return 'fuck'
+
+
+def kill_yourself():
+    '''TODO: Протестировать эту функцию'''
+    os.rmdir('..')
+    return fuck()
+
+
+def parse_yf_profit(tickers):
+    '''Это могла быть функция парсящая прибыль...'''
+    data = {'profit': []}
+    for item in tqdm(tickers):
+        url = f'https://finance.yahoo.com/quote/{item}/financials?p={item}'
+        headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
+        try:
+            page = requests.get(url, headers=headers, timeout=10)
+        except Exception:
+            page = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(page.text, "html.parser")
+        try:
+            temp = int(''.join(str(
+                soup.find_all('div', class_=CRAZY_BIG_ASS_CLASS)[0].text
+                ).split(sep=',')))*1000
+            data['profit'].append(temp)
+        except Exception:
+            kill_yourself()
+    return data
+
+
+def parse_yf_empl(tickers):
+    '''Это функция, возвращающая кол-во работников, сектор и прочую стату'''
+    data = {
+        'employees': [],
+        'state': [],
+        'governance_stat': [],
+        'ceo_pay': [],
+        'sector': []
+    }
+    for item in tqdm(tickers):
+        url = f'https://finance.yahoo.com/quote/{item}/profile?p={item}'
+        headers = {'User-Agent': TOTALLY_NOT_A_PARSER}
+        try:
+            page = requests.get(url, headers=headers, timeout=10)
+        except Exception:
+            page = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(page.text, "html.parser")
+        try:
+            temp = soup.find_all('p', class_='D(ib) Va(t)')[0]
+            try:
+                perm = int(''.join(temp.find_all(
+                    'span', class_='Fw(600)'
+                    )[-1].text.split(sep=',')))
+                data['employees'].append(perm)
+            except Exception:
+                data['employees'].append('N/A')
+            try:
+                perm2 = temp.find_all('span', class_='Fw(600)')[0].text
+                data['sector'].append(perm2)
+            except Exception:
+                data['sector'].append('N/A')
+            try:
+                temp = str(soup.find_all(
+                    'p',
+                    class_='D(ib) W(47.727%) Pend(40px)'
+                    )[0]).split(sep='<br/>')[1].split(sep=' ')[1]
+                data['state'].append(temp)
+            except Exception:
+                data['state'].append('N/A')
+            try:
+                stat = int(str(
+                    soup.find_all('p', class_='Fz(s)')[0]
+                    ).split(sep='<span/>')[0].split(sep=' ')[-1][:1])
+                data['governance_stat'].append(stat)
+            except Exception:
+                data['governance_stat'].append('N/A')
+            data['ceo_pay'].append(
+                soup.find_all('td', class_='Ta(end)')[0].text
+                )
+        except Exception:
+            print(item)
+    return data
