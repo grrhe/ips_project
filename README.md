@@ -5,9 +5,11 @@
 
 # Код
 
-main_notebook.ipynb - главная тетрадка с основным проектом
+main_notebook.ipynb - главная тетрадка
 
 custom_module.py - модуль в который вынесены тяжёлые и длинные функции
+
+SIGMA_notebook.ipynb - черновик
 
 # Файлы
 
